@@ -1,7 +1,7 @@
 # Paradox Holmes
 
 <p align="center">
-  <img src="assets/logo.jpg" alt="Paradox Holmes" width="420"/>
+  <img src="https://i.imgur.com/uiXt4pO.jpeg" alt="Paradox Holmes" width="420"/>
 </p>
 
 <p align="center">
