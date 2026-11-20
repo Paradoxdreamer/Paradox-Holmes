@@ -2,46 +2,34 @@
 
 **Production-grade dark-web hunter**
 
-Multi-engine .onion search · authenticated forum crawl · Telegram / Discord mirrors · archive unpack · MIME triage · SQLite FTS5 index
+Multi-engine .onion search · forum auth · Telegram/Discord mirrors · archive unpack · MIME triage · SQLite FTS5
 
 ---
 
-## Quick start (clone → run)
-
-### Linux
+## Install (Termux / Linux) — one shot
 
 ```bash
-git clone https://github.com/Paradoxdreamer/Paradox-Holmes.git
-cd Paradox-Holmes
-
+curl -sL https://raw.githubusercontent.com/Paradoxdreamer/Paradox-Holmes/main/install_holmes.sh | bash
+cd ~/Paradox-Holmes
 pip install aiohttp aiohttp-socks beautifulsoup4 lxml stem
 
-# Tor must be up (SOCKS 9050, control 9051 optional)
-# sudo systemctl start tor   # or: tor &
+# Tor must be up and bootstrapped
+pkill -9 tor 2>/dev/null
+tor &
+sleep 20
+curl --socks5-hostname 127.0.0.1:9050 -s https://check.torproject.org/api/ip
+# expect: "IsTor": true
 
 python3 paradox_holmes.py hunt "your query" -o results.zip
-python3 paradox_holmes.py search paradox_index.db
 ```
 
-### Termux (Android)
+Or clone + install:
 
 ```bash
-pkg update
-pkg install -y git python clang libxml2 libxslt pkg-config tor
-
-pip install aiohttp aiohttp-socks beautifulsoup4 stem
-pip install lxml
-# if lxml still fails:
-#   export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-#   pip install --no-cache-dir lxml
-
 git clone https://github.com/Paradoxdreamer/Paradox-Holmes.git
 cd Paradox-Holmes
-
-tor &
-sleep 8
-
-python paradox_holmes.py hunt "your query" -o results.zip
+bash install_holmes.sh .
+pip install aiohttp aiohttp-socks beautifulsoup4 lxml stem
 ```
 
 ---
@@ -50,42 +38,27 @@ python paradox_holmes.py hunt "your query" -o results.zip
 
 | Goal | Command |
 |------|---------|
-| Hunt / collect | `python paradox_holmes.py hunt "query" -o results.zip` |
-| Search local index | `python paradox_holmes.py search paradox_index.db` |
-| Help | `python paradox_holmes.py -h` |
+| Hunt | `python3 paradox_holmes.py hunt "query" -o results.zip` |
+| Search index | `python3 paradox_holmes.py search paradox_index.db` |
 
-Hunt output zip contains:
+---
 
-```
-loot/            # raw downloads
-extracted/       # unpacked archives
-MANIFEST.txt     # human summary
-sources.json     # machine source map
-paradox_index.db # FTS5 index
-```
+## What it does (guaranteed behavior)
+
+1. **Tor preflight** — refuses to hunt if SOCKS 9050 is dead (clear message, no traceback spam)
+2. **Multi-engine search** — Ahmia / Torch / Tor66 / DeepSearch / Excavator + Ahmia clearnet mirror
+3. **Fault isolation** — one dead engine never kills the hunt (`return_exceptions`)
+4. **Proxy errors swallowed** — SOCKS failures retry then skip that URL
+5. **Harvest → download → unpack → triage → FTS5 index → zip**
+6. **Empty results** — exits cleanly with a warning (no crash)
 
 ---
 
 ## Requirements
 
-```
-Python 3.10+
-aiohttp
-aiohttp-socks
-beautifulsoup4
-lxml
-stem
-```
-
-Optional: `unrar`, `p7zip` for rar/7z.
-
-Tor: SOCKS `127.0.0.1:9050`, control port `9051` for NEWNYM rotation.
-
----
-
-## Config
-
-Knobs live at the top of `paradox_holmes.py` (Tor URLs, limits, forum cookies, Telegram/Discord lists).
+- Python 3.10+
+- `aiohttp` `aiohttp-socks` `beautifulsoup4` `lxml` `stem`
+- Tor SOCKS on `127.0.0.1:9050` (control port 9051 optional for NEWNYM)
 
 ---
 
